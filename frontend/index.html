@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON转Excel工具</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 顶部导航栏 -->
+        <header class="header">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <span class="logo-text">JSON转Excel</span>
+            </div>
+            <div class="header-actions">
+                <button id="theme-toggle" class="btn-icon" title="切换主题">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 左侧边栏 - 文件和字段选择 -->
+            <aside class="sidebar">
+                <!-- 文件上传区 -->
+                <div class="section">
+                    <h3 class="section-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        文件上传
+                    </h3>
+                    <div id="drop-zone" class="drop-zone">
+                        <div class="drop-zone-content">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="12" y1="18" x2="12" y2="12"></line>
+                                <line x1="9" y1="15" x2="15" y2="15"></line>
+                            </svg>
+                            <p>拖拽文件到此处</p>
+                            <span>或</span>
+                            <button id="select-file-btn" class="btn-primary" onclick="document.getElementById('file-input').click()">选择文件</button>
+                            <input type="file" id="file-input" class="hidden" accept=".json,.txt" onchange="handleFileSelect(event)">
+                            <p class="file-types">支持 .txt, .json 格式</p>
+                        </div>
+                        <div id="file-info" class="file-info hidden">
+                            <div class="file-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                            </div>
+                            <div class="file-details">
+                                <p class="file-name" id="file-name"></p>
+                                <p class="file-meta" id="file-meta"></p>
+                            </div>
+                            <button id="change-file-btn" class="btn-text">更换</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 字段选择区 -->
+                <div class="section" id="fields-section" style="display: none;">
+                    <h3 class="section-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                        </svg>
+                        字段配置
+                        <span id="field-count" class="badge">0</span>
+                    </h3>
+                    
+                    <div class="field-actions">
+                        <button id="select-all-btn" class="btn-text">全选</button>
+                        <button id="deselect-all-btn" class="btn-text">全不选</button>
+                        <button id="expand-all-btn" class="btn-text">展开全部</button>
+                        <button id="collapse-all-btn" class="btn-text">收起全部</button>
+                    </div>
+
+                    <div id="fields-container" class="fields-container">
+                        <!-- 动态生成的字段树 -->
+                    </div>
+                </div>
+
+                <!-- 码值替换配置区 -->
+                <div class="section" id="code-mapping-section" style="display: none;">
+                    <h3 class="section-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                            <path d="M2 17l10 5 10-5"></path>
+                            <path d="M2 12l10 5 10-5"></path>
+                        </svg>
+                        码值替换
+                    </h3>
+                    
+                    <div class="code-mapping-actions">
+                        <button id="import-code-mapping-btn" class="btn-secondary" onclick="document.getElementById('code-mapping-file-input').click()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            导入映射表
+                        </button>
+                        <button id="download-template-btn" class="btn-text" onclick="downloadTemplate()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            下载模板
+                        </button>
+                        <input type="file" id="code-mapping-file-input" class="hidden" accept=".xlsx,.xls,.csv" onchange="handleCodeMappingFileSelect(event)">
+                    </div>
+                    
+                    <div id="code-mapping-container" class="code-mapping-container">
+                        <p style="padding:10px;color:#888;font-size:12px;">点击字段旁的≡按钮配置码值替换规则，或导入映射表</p>
+                    </div>
+                    
+                    <div id="code-mapping-actions-bottom" style="padding:8px 12px;border-top:1px solid var(--border-color);display:none;">
+                        <button id="toggle-all-mappings-btn" class="btn-text" onclick="toggleAllMappings()" style="color:#f59e0b;font-size:12px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                            全部失效/生效
+                        </button>
+                    </div>
+                    
+                    <div class="template-preview">
+                        <div class="template-preview-header" onclick="toggleTemplatePreview()">
+                            <span>查看模板示例</span>
+                            <svg id="template-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.2s;">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
+                        <div id="template-preview-content" class="template-preview-content" style="display: none;">
+                            <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">格式1：字段级映射（推荐）</p>
+                            <table class="template-table">
+                                <tr><th>字段路径</th><th>源值</th><th>目标值</th></tr>
+                                <tr><td>status</td><td>01</td><td>A</td></tr>
+                                <tr><td>status</td><td>02</td><td>B</td></tr>
+                                <tr><td>gender</td><td>male</td><td>男</td></tr>
+                                <tr><td>gender</td><td>female</td><td>女</td></tr>
+                            </table>
+                            <p style="font-size:12px;color:var(--text-secondary);margin:12px 0 8px 0;">格式2：全局映射</p>
+                            <table class="template-table">
+                                <tr><th>源值</th><th>目标值</th></tr>
+                                <tr><td>01</td><td>A</td></tr>
+                                <tr><td>02</td><td>B</td></tr>
+                                <tr><td>male</td><td>男</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 右侧工作区 -->
+            <div class="workspace">
+                <!-- 空状态 -->
+                <div id="empty-state" class="empty-state">
+                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <path d="M8 16h.01"></path>
+                        <path d="M12 16h.01"></path>
+                        <path d="M16 16h.01"></path>
+                        <path d="M8 12h.01"></path>
+                        <path d="M12 12h.01"></path>
+                        <path d="M16 12h.01"></path>
+                    </svg>
+                    <h2>欢迎使用 JSON 转 Excel 工具</h2>
+                    <p>请上传 JSON 文件开始转换</p>
+                </div>
+
+                <!-- 预览区 -->
+                <div id="preview-section" class="preview-section" style="display: none;">
+                    <div class="preview-header">
+                        <h3 class="preview-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            数据预览
+                            <span id="preview-count" class="badge">前10条</span>
+                        </h3>
+                        <div class="preview-actions">
+                            <button id="refresh-preview-btn" class="btn-secondary">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                    <polyline points="1 20 1 14 7 14"></polyline>
+                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                                </svg>
+                                刷新
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="preview-table-container">
+                        <table id="preview-table" class="preview-table">
+                            <thead id="preview-thead"></thead>
+                            <tbody id="preview-tbody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="export-section">
+                        <div class="export-options">
+                            <label class="export-option">
+                                <input type="checkbox" id="auto-width" checked>
+                                <span>自动调整列宽</span>
+                            </label>
+                        </div>
+                        <button id="export-btn" class="btn-primary btn-large">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            导出Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 底部状态栏 -->
+        <footer class="footer">
+            <div class="status-left">
+                <span id="status-text">准备就绪</span>
+            </div>
+            <div class="status-right">
+                <span id="record-count">0 条记录</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 加载动画 -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+        <p id="loading-text">处理中...</p>
+    </div>
+
+    <!-- 提示消息 -->
+    <div id="toast" class="toast hidden">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- SheetJS for Excel reading -->
+    <script src="/static/lib/xlsx.full.min.js"></script>
+
+    <!-- 应用脚本 -->
+    <script src="/static/js/app.js"></script>
+
+    <!-- 码值替换弹窗 -->
+    <div id="code-mapping-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">码值替换配置</h3>
+                <button id="close-modal-btn" class="btn-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>选择字段</label>
+                    <select id="modal-field-select" class="form-control">
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>码值映射（源值 -> 目标值）</label>
+                    <div id="mapping-rules-container">
+                        <div class="mapping-rule-row">
+                            <input type="text" class="form-control source-value" placeholder="源值">
+                            <span class="mapping-arrow">→</span>
+                            <input type="text" class="form-control target-value" placeholder="目标值">
+                            <button class="btn-icon remove-mapping-btn" title="删除">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <button id="add-mapping-btn" class="btn-secondary" style="margin-top:8px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        添加映射
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-modal-btn" class="btn-secondary">取消</button>
+                <button id="save-mapping-btn" class="btn-primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let app = null;
+
+    function handleFileSelect(event) {
+        if (app) {
+            app.handleFileSelect(event);
+        }
+    }
+
+    function handleFileDrop(event) {
+        event.preventDefault();
+        if (app) {
+            app.handleFileDrop(event);
+        }
+    }
+
+    function resetFile() {
+        if (app) {
+            app.resetFile();
+        }
+    }
+
+    function handleSelectAll() {
+        if (app) {
+            app.handleSelectAll();
+        }
+    }
+
+    function handleDeselectAll() {
+        if (app) {
+            app.handleDeselectAll();
+        }
+    }
+
+    function handleExpandAll() {
+        if (app) {
+            app.handleExpandAll();
+        }
+    }
+
+    function handleCollapseAll() {
+        if (app) {
+            app.handleCollapseAll();
+        }
+    }
+
+    function handleRefreshPreview() {
+        if (app) {
+            app.handleRefreshPreview();
+        }
+    }
+
+    function handleExport() {
+        if (app) {
+            app.handleExport();
+        }
+    }
+
+    function toggleTheme() {
+        if (app) {
+            app.toggleTheme();
+        }
+    }
+
+    function handleCodeMappingFileSelect(event) {
+        if (app) {
+            app.handleCodeMappingFileSelect(event);
+        }
+    }
+
+    function downloadTemplate() {
+        if (app) {
+            app.downloadTemplate();
+        }
+    }
+
+    function toggleAllMappings() {
+        if (app) {
+            app.disableAllMappings();
+        }
+    }
+
+    function toggleTemplatePreview() {
+        const content = document.getElementById('template-preview-content');
+        const arrow = document.getElementById('template-arrow');
+        if (content && arrow) {
+            const isHidden = content.style.display === 'none';
+            content.style.display = isHidden ? 'block' : 'none';
+            arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        app = new JSONToExcelApp();
+        app.init();
+    });
+    </script>
+</body>
+</html>
