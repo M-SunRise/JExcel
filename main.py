@@ -47,7 +47,12 @@ log_debug(f"HAS_TRAY: {HAS_TRAY}")
 
 def get_icon_path():
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    icon_path = os.path.join(base_dir, 'resources', 'JExcel.ico')
+    if getattr(sys, 'frozen', False):
+        icon_path = os.path.join(sys._MEIPASS, 'resources', 'JExcel.ico')
+        if not os.path.exists(icon_path):
+            icon_path = os.path.join(base_dir, 'resources', 'JExcel.ico')
+    else:
+        icon_path = os.path.join(base_dir, 'resources', 'JExcel.ico')
     log_debug(f"Icon path: {icon_path}, exists: {os.path.exists(icon_path)}")
     return icon_path
 

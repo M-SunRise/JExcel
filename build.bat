@@ -40,6 +40,6 @@ echo.
 echo ===========================================
 echo   打包完成！
 echo ===========================================
-echo 可执行文件位置: build\dist\jsonExcel.exe
+echo 可执行文件位置: build\dist\JExcel.exe
 echo.
 pause

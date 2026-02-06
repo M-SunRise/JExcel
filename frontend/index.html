@@ -91,6 +91,14 @@
                         </svg>
                         字段配置
                         <span id="field-count" class="badge">0</span>
+                        <button id="expand-fields-btn" class="btn-icon" title="展开配置面板" onclick="app.openFieldConfigWindow()" style="margin-left: auto;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <polyline points="9 21 3 21 3 15"></polyline>
+                                <line x1="21" y1="3" x2="14" y2="10"></line>
+                                <line x1="3" y1="21" x2="10" y2="14"></line>
+                            </svg>
+                        </button>
                     </h3>
                     
                     <div class="field-actions">
@@ -319,6 +327,37 @@
             <div class="modal-footer">
                 <button id="cancel-modal-btn" class="btn-secondary">取消</button>
                 <button id="save-mapping-btn" class="btn-primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 字段配置大窗口 -->
+    <div id="field-config-modal" class="modal hidden">
+        <div class="modal-content field-config-modal-content">
+            <div class="modal-header">
+                <h3>字段配置面板</h3>
+                <button id="close-field-config-btn" class="btn-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body field-config-modal-body">
+                <div class="field-config-toolbar">
+                    <button id="config-select-all-btn" class="btn-secondary">全选</button>
+                    <button id="config-deselect-all-btn" class="btn-secondary">全不选</button>
+                    <button id="config-expand-all-btn" class="btn-secondary">展开全部</button>
+                    <button id="config-collapse-all-btn" class="btn-secondary">收起全部</button>
+                    <input type="text" id="config-search-input" class="form-control" placeholder="搜索字段..." style="width: 200px;">
+                </div>
+                <div id="field-config-tree" class="field-config-tree">
+                    <!-- 动态生成 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <span id="config-field-count" style="color: var(--text-secondary); font-size: 14px;">已选择: 0 个字段</span>
+                <button id="close-config-btn" class="btn-primary">关闭</button>
             </div>
         </div>
     </div>

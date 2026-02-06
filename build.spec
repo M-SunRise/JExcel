@@ -11,8 +11,8 @@ except NameError:
 dist_path = os.path.join(project_root, 'dist')
 
 added_files = [
-    ('../jsonExcel/frontend', 'frontend'),
-    ('../jsonExcel/resources', 'resources'),
+    ('frontend', 'frontend'),
+    ('resources', 'resources'),
 ]
 
 hidden_imports = [
@@ -37,8 +37,8 @@ hidden_imports = [
 ]
 
 a = Analysis(
-    ['../jsonExcel/main.py'],
-    pathex=[project_root, '../jsonExcel'],
+    ['main.py'],
+    pathex=[project_root],
     binaries=[],
     datas=added_files,
     hiddenimports=hidden_imports,
@@ -73,7 +73,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='../jsonExcel/resources/JExcel.ico',
+    icon='resources/JExcel.ico',
     distpath=dist_path,
 )
 

@@ -1096,6 +1096,11 @@ class JSONToExcelApp {
 
         if (!modal || !fieldSelect || !container) return;
 
+        const configModal = document.getElementById('field-config-modal');
+        if (configModal) {
+            configModal.classList.add('hidden');
+        }
+
         fieldSelect.innerHTML = '';
         const selectedFieldsArray = Array.from(this.selectedFields);
         selectedFieldsArray.forEach(field => {
@@ -1127,6 +1132,11 @@ class JSONToExcelApp {
         const modal = document.getElementById('code-mapping-modal');
         if (modal) {
             modal.classList.add('hidden');
+        }
+        
+        const configModal = document.getElementById('field-config-modal');
+        if (configModal) {
+            configModal.classList.remove('hidden');
         }
     }
 
@@ -1180,6 +1190,12 @@ class JSONToExcelApp {
 
         this.renderCodeMappingList();
         this.closeCodeMappingModal();
+        
+        const configModal = document.getElementById('field-config-modal');
+        if (configModal) {
+            configModal.classList.remove('hidden');
+        }
+        
         this.showToast('码值映射已保存', 'success');
         setTimeout(() => this.handleRefreshPreview(), 100);
     }
@@ -1321,5 +1337,212 @@ class JSONToExcelApp {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, '码值映射模板');
         XLSX.writeFile(wb, '码值映射模板.xlsx');
+    }
+
+    openFieldConfigWindow() {
+        const modal = document.getElementById('field-config-modal');
+        const treeContainer = document.getElementById('field-config-tree');
+        
+        if (!modal || !treeContainer) return;
+
+        this.renderFieldConfigTree();
+        this.updateConfigFieldCount();
+        
+        modal.classList.remove('hidden');
+        
+        const closeBtn = document.getElementById('close-field-config-btn');
+        const closeConfigBtn = document.getElementById('close-config-btn');
+        
+        if (closeBtn) {
+            closeBtn.onclick = () => this.closeFieldConfigWindow();
+        }
+        if (closeConfigBtn) {
+            closeConfigBtn.onclick = () => this.closeFieldConfigWindow();
+        }
+
+        const searchInput = document.getElementById('config-search-input');
+        if (searchInput) {
+            searchInput.oninput = (e) => this.filterFieldConfigTree(e.target.value);
+        }
+
+        const selectAllBtn = document.getElementById('config-select-all-btn');
+        const deselectAllBtn = document.getElementById('config-deselect-all-btn');
+        const expandAllBtn = document.getElementById('config-expand-all-btn');
+        const collapseAllBtn = document.getElementById('config-collapse-all-btn');
+        
+        if (selectAllBtn) selectAllBtn.onclick = () => this.handleSelectAll();
+        if (deselectAllBtn) deselectAllBtn.onclick = () => this.handleDeselectAll();
+        if (expandAllBtn) expandAllBtn.onclick = () => this.handleExpandAll();
+        if (collapseAllBtn) collapseAllBtn.onclick = () => this.handleCollapseAll();
+    }
+
+    closeFieldConfigWindow() {
+        const modal = document.getElementById('field-config-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+
+    renderFieldConfigTree(filterText = '') {
+        const container = document.getElementById('field-config-tree');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        if (!this.structure || this.structure.length === 0) {
+            container.innerHTML = '<p style="padding:10px;color:#888;">未识别到字段</p>';
+            return;
+        }
+
+        const ul = document.createElement('ul');
+        ul.className = 'field-tree';
+        this.renderConfigTreeNodes(this.structure, ul, filterText);
+        container.appendChild(ul);
+        
+        this.updateConfigFieldCount();
+    }
+
+    renderConfigTreeNodes(nodes, parentElement, filterText = '') {
+        if (!nodes || !Array.isArray(nodes)) return;
+
+        nodes.forEach(field => {
+            if (!field || !field.path) return;
+
+            const displayName = this.columnMapping[field.path] || field.name || '';
+            if (filterText && !displayName.toLowerCase().includes(filterText.toLowerCase()) && 
+                !field.path.toLowerCase().includes(filterText.toLowerCase())) {
+                if (field.children) {
+                    const filteredChildren = field.children.filter(child => {
+                        const childName = this.columnMapping[child.path] || child.name || '';
+                        return childName.toLowerCase().includes(filterText.toLowerCase()) || 
+                               child.path.toLowerCase().includes(filterText.toLowerCase());
+                    });
+                    if (filteredChildren.length === 0) return;
+                } else {
+                    return;
+                }
+            }
+
+            const li = document.createElement('li');
+            const fieldItem = document.createElement('div');
+            fieldItem.className = 'field-item';
+
+            const hasChildren = field.hasChildren && field.children && field.children.length > 0;
+
+            if (hasChildren) {
+                const expandIcon = document.createElement('span');
+                expandIcon.className = 'expand-icon';
+                expandIcon.innerHTML = '▶';
+                expandIcon.onclick = (e) => {
+                    e.stopPropagation();
+                    const childrenContainer = li.querySelector('.field-children');
+                    if (childrenContainer) {
+                        const isExpanded = expandIcon.classList.contains('expanded');
+                        expandIcon.classList.toggle('expanded');
+                        childrenContainer.style.display = isExpanded ? 'none' : 'block';
+                    }
+                };
+                fieldItem.appendChild(expandIcon);
+            } else {
+                const spacer = document.createElement('span');
+                spacer.className = 'field-spacer';
+                fieldItem.appendChild(spacer);
+            }
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = 'config-field-' + field.path;
+            checkbox.dataset.path = field.path;
+            checkbox.checked = this.selectedFields.has(field.path);
+            checkbox.onchange = (e) => this.onConfigFieldToggle(e, field.path);
+            fieldItem.appendChild(checkbox);
+
+            const label = document.createElement('label');
+            label.htmlFor = 'config-field-' + field.path;
+            label.textContent = displayName;
+            label.style.cursor = 'pointer';
+
+            if (field.type) {
+                const typeSpan = document.createElement('span');
+                typeSpan.className = 'field-type';
+                typeSpan.textContent = field.type;
+                typeSpan.style.marginLeft = '8px';
+                label.appendChild(typeSpan);
+
+                label.ondblclick = (e) => {
+                    e.stopPropagation();
+                    this.editColumnName(field.path, label);
+                };
+            }
+
+            fieldItem.appendChild(label);
+
+            const actionsSpan = document.createElement('span');
+            actionsSpan.className = 'node-actions';
+            actionsSpan.style.display = 'inline-flex';
+            actionsSpan.style.gap = '4px';
+            actionsSpan.style.marginLeft = '8px';
+
+            const codeMappingBtn = document.createElement('button');
+            codeMappingBtn.className = 'node-action-btn code-mapping-btn';
+            codeMappingBtn.innerHTML = '≡';
+            codeMappingBtn.title = '码值替换';
+            codeMappingBtn.type = 'button';
+            codeMappingBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.openCodeMappingModal(field.path);
+            };
+            actionsSpan.appendChild(codeMappingBtn);
+
+            fieldItem.appendChild(actionsSpan);
+
+            li.appendChild(fieldItem);
+
+            if (hasChildren) {
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'field-children';
+                childrenContainer.style.display = 'none';
+
+                const childrenUl = document.createElement('ul');
+                childrenUl.className = 'field-tree';
+                this.renderConfigTreeNodes(field.children, childrenUl, filterText);
+                childrenContainer.appendChild(childrenUl);
+                li.appendChild(childrenContainer);
+            }
+
+            parentElement.appendChild(li);
+        });
+    }
+
+    onConfigFieldToggle(e, path) {
+        if (!e || !e.target) return;
+
+        if (e.target.checked) {
+            this.selectedFields.add(path);
+        } else {
+            this.selectedFields.delete(path);
+        }
+
+        const checkboxes = document.querySelectorAll('#field-config-tree input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            if (cb && cb.dataset && cb.dataset.path) {
+                cb.checked = this.selectedFields.has(cb.dataset.path);
+            }
+        });
+
+        this.updateConfigFieldCount();
+        setTimeout(() => this.handleRefreshPreview(), 100);
+    }
+
+    updateConfigFieldCount() {
+        const count = this.selectedFields.size;
+        const countEl = document.getElementById('config-field-count');
+        if (countEl) {
+            countEl.textContent = `已选择: ${count} 个字段`;
+        }
+    }
+
+    filterFieldConfigTree(filterText) {
+        this.renderFieldConfigTree(filterText);
     }
 }

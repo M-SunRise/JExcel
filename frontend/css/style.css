@@ -13,7 +13,7 @@
     --accent-error: #ef4444;
     --border-color: #d1d5db;
     --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    --transition: all 0.3s ease;
+    --
 }
 
 * {
@@ -74,7 +74,7 @@ body {
     color: var(--text-secondary);
     cursor: pointer;
     border-radius: 6px;
-    transition: var(--transition);
+    
 }
 
 .btn-icon:hover {
@@ -135,7 +135,7 @@ body {
     border-radius: 8px;
     padding: 16px;
     text-align: center;
-    transition: var(--transition);
+    
     background: var(--bg-tertiary);
 }
 
@@ -208,7 +208,7 @@ body {
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: var(--transition);
+    
     position: relative;
     z-index: 1;
 }
@@ -230,11 +230,11 @@ body {
     border-radius: 6px;
     font-size: 13px;
     cursor: pointer;
-    transition: var(--transition);
+    
 }
 
 .btn-secondary:hover {
-    background: var(--bg-hover);
+    color: var(--accent-primary);
 }
 
 .btn-text {
@@ -244,7 +244,7 @@ body {
     border: none;
     font-size: 12px;
     cursor: pointer;
-    transition: var(--transition);
+    
 }
 
 .btn-text:hover {
@@ -395,7 +395,7 @@ body {
     font-size: 11px;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: var(--transition);
+    
 }
 
 .template-preview-header:hover {
@@ -439,7 +439,7 @@ body {
     gap: 8px;
     padding: 6px 0;
     border-radius: 4px;
-    transition: var(--transition);
+    
     position: relative;
 }
 
@@ -818,7 +818,7 @@ body {
     justify-content: center;
     cursor: pointer;
     color: var(--text-muted);
-    transition: var(--transition);
+    
     flex-shrink: 0;
 }
 
@@ -845,7 +845,7 @@ body {
     color: var(--text-primary);
     font-size: 12px;
     width: 120px;
-    transition: var(--transition);
+    
 }
 
 .column-mapping-input:focus {
@@ -862,7 +862,7 @@ body {
     gap: 4px;
     margin-left: 8px;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    
 }
 
 .field-item:hover .node-actions {
@@ -877,7 +877,7 @@ body {
     background: var(--bg-secondary);
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    
 }
 
 .node-action-btn:hover {
@@ -896,17 +896,71 @@ body {
     background: var(--bg-hover);
 }
 
-.select-children-btn:hover {
-    background: rgba(16, 185, 129, 0.1);
-    border-color: var(--accent-success);
-    color: var(--accent-success);
+.field-config-modal-content {
+    max-width: 900px;
+    width: 95%;
+    max-height: 90vh;
 }
 
-.deselect-children-btn:hover {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: var(--accent-error);
-    color: var(--accent-error);
+.field-config-modal-body {
+    padding: 16px;
+    max-height: calc(90vh - 140px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
+
+.field-config-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.field-config-toolbar .form-control {
+    width: auto;
+    min-width: 150px;
+}
+
+.field-config-tree {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.field-config-tree .field-item {
+    padding: 8px;
+    margin-bottom: 4px;
+    background: var(--bg-primary);
+    border-radius: 6px;
+}
+
+.field-config-tree .field-item:hover {
+    background: var(--bg-hover);
+}
+
+.field-config-tree .field-children {
+    margin-left: 24px;
+    padding-left: 12px;
+}
+
+.field-config-tree .field-item label {
+    font-size: 14px;
+}
+
+.field-config-tree .column-mapping-input {
+    width: 180px;
+    font-size: 13px;
+}
+
+.field-config-tree .node-actions {
+    opacity: 1;
+}
+
 
 .th-content {
     display: flex;
@@ -927,7 +981,7 @@ body {
     font-size: 12px;
     cursor: pointer;
     opacity: 0.3;
-    transition: all 0.2s ease;
+    
     padding: 2px;
     border-radius: 3px;
 }
@@ -968,6 +1022,7 @@ body {
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    
 }
 
 .modal-content {
@@ -978,6 +1033,7 @@ body {
     max-height: 80vh;
     overflow: hidden;
     box-shadow: var(--shadow);
+    
 }
 
 .modal-header {
@@ -1029,7 +1085,7 @@ body {
     color: var(--text-primary);
     background: var(--bg-primary);
     outline: none;
-    transition: var(--transition);
+    
 }
 
 .form-control:focus {
@@ -1061,5 +1117,73 @@ body {
 
 .remove-mapping-btn:hover {
     color: var(--accent-error);
+}
+
+.field-config-modal-content {
+    max-width: 900px;
+    width: 95%;
+    max-height: 90vh;
+}
+
+.field-config-modal-body {
+    padding: 16px;
+    max-height: calc(90vh - 140px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.field-config-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.field-config-toolbar .form-control {
+    width: auto;
+    min-width: 150px;
+}
+
+.field-config-tree {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.field-config-tree .field-item {
+    padding: 8px;
+    margin-bottom: 4px;
+    background: var(--bg-primary);
+    border-radius: 6px;
+}
+
+.field-config-tree .field-item:hover {
     background: var(--bg-hover);
+}
+
+.field-config-tree .field-children {
+    margin-left: 24px;
+    padding-left: 12px;
+}
+
+.field-config-tree .field-item label {
+    font-size: 14px;
+}
+
+.field-config-tree .column-mapping-input {
+    width: 180px;
+    font-size: 13px;
+}
+
+.field-config-tree .node-actions {
+    opacity: 1;
+}
+
+.field-config-tree .field-item:hover {
+    background: transparent !important;
 }
