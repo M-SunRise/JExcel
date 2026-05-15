@@ -245,7 +245,7 @@ class JSONToExcelApp {
         this.showLoading('正在生成预览...');
 
         try {
-            await fetch('/api/select-fields', {
+            const response = await fetch('/api/preview', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -255,8 +255,6 @@ class JSONToExcelApp {
                     code_mappings: this.codeMappings
                 })
             });
-
-            const response = await fetch(`/api/preview?session_id=${this.sessionId}`);
             const result = await response.json();
 
             if (result.success && result.preview) {

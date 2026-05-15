@@ -74,22 +74,25 @@ class JSONParser:
 
     def _extract_paths(self, obj: Any, prefix: str = '') -> Set[str]:
         paths = set()
+        stack = [(obj, prefix, 0)]
+        max_depth = 15
 
-        if isinstance(obj, dict):
-            for key, value in obj.items():
-                current_path = f"{prefix}.{key}" if prefix else key
-                paths.add(current_path)
+        while stack:
+            current, path_prefix, depth = stack.pop()
+            if depth > max_depth:
+                continue
 
-                if isinstance(value, (dict, list)) and value:
-                    if isinstance(value, dict):
-                        paths.update(self._extract_paths(value, current_path))
-                    elif isinstance(value, list) and len(value) > 0:
-                        if isinstance(value[0], (dict, list)):
-                            paths.update(self._extract_paths(value[0], current_path))
+            if isinstance(current, dict):
+                for key, value in current.items():
+                    full_path = f"{path_prefix}.{key}" if path_prefix else key
+                    if full_path not in paths:
+                        paths.add(full_path)
+                        if isinstance(value, (dict, list)):
+                            stack.append((value, full_path, depth + 1))
 
-        elif isinstance(obj, list) and len(obj) > 0:
-            if isinstance(obj[0], (dict, list)):
-                paths.update(self._extract_paths(obj[0], prefix))
+            elif isinstance(current, list):
+                for item in current:
+                    stack.append((item, path_prefix, depth + 1))
 
         return paths
 
@@ -139,28 +142,36 @@ class JSONParser:
 
         return current
 
-    def flatten_data(self, data: Any, selected_fields: List[str], column_mapping: Dict[str, str],
-                     code_mappings: Optional[Dict[str, Dict[str, str]]] = None) -> List[Dict]:
+    def flatten_data(self, data: Any, selected_fields: List[str],
+                      column_mapping: Dict[str, str],
+                      code_mappings: Optional[Dict[str, Dict[str, str]]] = None,
+                      limit: Optional[int] = None) -> List[Dict]:
         if not data:
             return []
 
         if not isinstance(data, list):
             data = [data]
 
-        flattened_data = []
+        result = []
+        code_mappings = code_mappings or {}
 
         for record in data:
-            expanded_records = self._expand_record_with_arrays(record, selected_fields)
-            flattened_data.extend(expanded_records)
-
-        result = []
-        for flat in flattened_data:
-            new_record = {}
-            for path, value in flat.items():
-                col_name = column_mapping.get(path, path.split('.')[-1])
-                mapped_value = self._apply_code_mapping(value, path, code_mappings or {})
-                new_record[col_name] = self._format_value(mapped_value)
-            result.append(new_record)
+            if limit and len(result) >= limit:
+                break
+            expanded = self._expand_record_with_arrays(
+                record, selected_fields, limit=(limit - len(result)) if limit else None
+            )
+            for flat in expanded:
+                new_record = {}
+                for path, value in flat.items():
+                    col_name = column_mapping.get(path, path.split('.')[-1])
+                    mapped_value = self._apply_code_mapping(value, path, code_mappings)
+                    if isinstance(mapped_value, (dict, list)):
+                        mapped_value = json.dumps(mapped_value, ensure_ascii=False)
+                    new_record[col_name] = mapped_value
+                result.append(new_record)
+                if limit and len(result) >= limit:
+                    return result
 
         return result
 
@@ -181,7 +192,8 @@ class JSONParser:
 
         return value
 
-    def _expand_record_with_arrays(self, record: Dict, selected_fields: List[str]) -> List[Dict]:
+    def _expand_record_with_arrays(self, record: Dict, selected_fields: List[str],
+                                    limit: Optional[int] = None) -> List[Dict]:
         array_paths = self._find_array_paths(selected_fields)
 
         if not array_paths:
@@ -194,9 +206,8 @@ class JSONParser:
             return [self._flatten_single_record(record, selected_fields)]
 
         expanded_records = []
-        max_items = 10000
         for idx, item in enumerate(array_items):
-            if idx >= max_items:
+            if limit and len(expanded_records) >= limit:
                 break
             if isinstance(item, dict):
                 new_record = self._merge_array_item(record, deepest_array_path, item)
@@ -267,19 +278,15 @@ class JSONParser:
         return []
 
     def _merge_array_item(self, record: Dict, array_path: str, item: Any) -> Dict:
-        import copy
-        new_record = copy.deepcopy(record)
-
         parts = array_path.split('.')
-        current = new_record
+        new_record = dict(record)
 
+        current_new = new_record
         for part in parts[:-1]:
-            if isinstance(current, dict) and part in current:
-                current = current[part]
+            current_new[part] = dict(current_new[part])
+            current_new = current_new[part]
 
-        if parts[-1] in current:
-            current[parts[-1]] = item
-
+        current_new[parts[-1]] = item
         return new_record
 
     def _flatten_single_record(self, record: Dict, selected_fields: List[str]) -> Dict:

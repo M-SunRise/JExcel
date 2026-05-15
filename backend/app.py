@@ -66,6 +66,7 @@ def upload_file():
 
     sessions[session_id] = {
         'parser': parser,
+        'data': parser.data,
         'content': content,
         'file_name': file.filename,
         'column_mapping': {},
@@ -114,32 +115,46 @@ def select_fields():
 
     return jsonify({"success": True})
 
-@app.route('/api/preview', methods=['GET'])
+@app.route('/api/preview', methods=['POST'])
 def get_preview():
-    session_id = request.args.get('session_id')
+    data = request.json
+    session_id = data.get('session_id')
     if session_id not in sessions:
         return jsonify({"success": False, "error": "会话过期"}), 400
 
+    selected = data.get('selected_fields', [])
+    column_mapping = data.get('column_mapping', {})
+    code_mappings = data.get('code_mappings', {})
+
     session = sessions[session_id]
-    content = session['content']
-    parser = JSONParser()
-    parse_success, parse_message = parser.parse(content)
+    session['selected_fields'] = selected
+    session['column_mapping'] = column_mapping
+    if code_mappings:
+        session.setdefault('code_mappings', {}).update(code_mappings)
 
-    if not parse_success:
-        return jsonify({"success": False, "error": parse_message}), 400
+    # 优先使用缓存的解析后数据，避免重复 parse 整个 JSON 字符串
+    data_obj = session.get('data')
+    parser = session['parser']
 
-    data_obj = parser._parse_content(content)
-    selected = session.get('selected_fields', [])
-    mapping = session.get('column_mapping', {})
-    code_mappings = session.get('code_mappings', {})
+    if data_obj is None:
+        # 兜底：缓存被清理时重新解析
+        parse_success, parse_message = parser.parse(session['content'])
+        if not parse_success:
+            return jsonify({"success": False, "error": parse_message}), 400
+        data_obj = parser.data
+        session['data'] = data_obj
 
     if not selected:
         selected = list(parser.fields.keys())
 
-    preview_data = parser.flatten_data(data_obj, selected, mapping, code_mappings)[:Config.PREVIEW_ROWS]
+    preview_data = parser.flatten_data(
+        data_obj, selected, column_mapping,
+        session.get('code_mappings', {}),
+        limit=Config.PREVIEW_ROWS
+    )
 
     headers = []
-    if preview_data and len(preview_data) > 0:
+    if preview_data:
         headers = list(preview_data[0].keys())
 
     return jsonify({
@@ -159,11 +174,17 @@ def export_excel():
         return jsonify({"success": False, "error": "会话过期"}), 400
 
     session = sessions[session_id]
-    content = session['content']
 
-    parser = JSONParser()
-    parser.parse(content)
-    data_obj = parser._parse_content(content)
+    # 优先使用缓存的解析后数据
+    data_obj = session.get('data')
+    parser = session['parser']
+
+    if data_obj is None:
+        parse_success, parse_message = parser.parse(session['content'])
+        if not parse_success:
+            return jsonify({"success": False, "error": parse_message}), 400
+        data_obj = parser.data
+        session['data'] = data_obj
 
     selected = session.get('selected_fields', [])
     mapping = session.get('column_mapping', {})
@@ -173,14 +194,16 @@ def export_excel():
 
     final_code_mappings = {**session.get('code_mappings', {}), **code_mappings}
 
+    # 统一使用 session 中的 parser 进行扁平化（确保数组展开逻辑与预览一致）
+    flat_data = parser.flatten_data(
+        data_obj, selected, mapping, code_mappings=final_code_mappings
+    )
+
     exporter = ExcelExporter()
     result = exporter.export(
-        data=data_obj,
-        column_mapping=mapping,
+        flat_data=flat_data,
         output_path=None,
-        selected_fields=selected,
-        auto_width=True,
-        code_mappings=final_code_mappings
+        auto_width=True
     )
 
     if result['success']:
