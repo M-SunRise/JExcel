@@ -10,6 +10,16 @@ except NameError:
 
 dist_path = os.path.join(project_root, 'dist')
 
+# Add conda library bin to PATH so PyInstaller can find native DLLs
+conda_prefix = os.path.dirname(os.path.dirname(sys.executable))
+library_bin = os.path.join(conda_prefix, 'Library', 'bin')
+os.environ['PATH'] = library_bin + os.pathsep + os.environ.get('PATH', '')
+if hasattr(os, 'add_dll_directory'):
+    try:
+        os.add_dll_directory(library_bin)
+    except Exception:
+        pass
+
 added_files = [
     ('frontend', 'frontend'),
     ('resources', 'resources'),
@@ -17,23 +27,38 @@ added_files = [
 
 hidden_imports = [
     'flask',
-    'flask.send_file',
-    'pandas',
     'openpyxl',
     'chardet',
-    'json',
     'pathlib',
     'psutil',
-    'importlib.resources',
-    'importlib.resources.files',
     'PIL',
     'PIL.Image',
     'PIL.ImageDraw',
     'pystray',
     'pystray._win32',
-    'pystray._win32ffi',
-    'ctypes',
-    'ctypes.wintypes',
+]
+
+excludes = [
+    'pkg_resources',
+    'torch', 'torchvision', 'torchaudio',
+    'tensorflow', 'tensorboard',
+    'transformers', 'datasets', 'tokenizers',
+    'scipy', 'scipy.special', 'scipy.linalg', 'scipy.sparse',
+    'scipy.stats', 'scipy.io', 'scipy.optimize',
+    'scipy.signal', 'scipy.spatial', 'scipy.integrate',
+    'sklearn', 'sklearn.cluster', 'sklearn.ensemble',
+    'sklearn.metrics', 'sklearn.neighbors', 'sklearn.tree',
+    'sklearn.linear_model', 'sklearn.utils',
+    'matplotlib', 'seaborn', 'plotly',
+    'pyarrow', 'fastparquet',
+    'dask', 'distributed',
+    'fsspec', 'gcsfs', 's3fs',
+    'boto3', 'botocore',
+    'zmq', 'pyzmq',
+    'notebook', 'jupyter_client', 'ipykernel',
+    'tornado',
+    'greenlet',
+    'pip', 'wheel',
 ]
 
 a = Analysis(
@@ -44,8 +69,8 @@ a = Analysis(
     hiddenimports=hidden_imports,
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],
-    excludes=['pkg_resources'],
+    runtime_hooks=[os.path.join(project_root, 'rthook_add_dll_path.py')],
+    excludes=excludes,
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=None,
@@ -65,7 +90,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,
@@ -74,7 +99,6 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon='resources/JExcel.ico',
-    distpath=dist_path,
 )
 
 if sys.platform == 'win32':
